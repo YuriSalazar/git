@@ -1,0 +1,57 @@
+#Nome do action
+name: "CodeQL no projeto do Git"
+
+#onde será rodado
+on:
+  push: # ao enviar o commit para a master
+    branches: [ master ]
+  pull_request: #ao puxar um commit da master
+    # As ramificacoes a baixo devem ser subsets das ramificacoes acima
+    branches: [ master ]
+  schedule: # programacao
+    #        ┌───────────── minutos (0 - 59)
+    #        │  ┌───────────── horas (0 - 23)
+    #        │  │ ┌───────────── dia do mes (1 - 31)
+    #        │  │ │ ┌───────────── mes (1 - 12 or JANEIRO-DEZEMBRO)
+    #        │  │ │ │ ┌───────────── dia da semana (0 - 6 or DOMINGO-SABADO)
+    #        │  │ │ │ │
+    #        │  │ │ │ │
+    #        │  │ │ │ │
+    #        *  * * * *        
+    - cron: '18 18 * * 3'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp', 'go', 'javascript', 'python' ]
+        # CodeQL suporta [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python', 'ruby' ]
+
+    #passos que o codeQl dará
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: ${{ matrix.language }}
+        # Caso tenha alguma query especifica, pode escreve-la aqui ou no arquivo de configuracao
+        # as queries escritas aqui irao sobrescrever as escritas no config.
+
+    # O autocompilador tenta compilar para as linguagens (C/C++, C#, or Java)
+    # e caso ele nao consiga ele ira compilar "manualmente".
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
+
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
